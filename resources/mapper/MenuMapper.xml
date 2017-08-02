@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!--
+  ~ The MIT License (MIT)
+  ~
+  ~ Copyright (c) 2014-2016 abel533@gmail.com
+  ~
+  ~ Permission is hereby granted, free of charge, to any person obtaining a copy
+  ~ of this software and associated documentation files (the "Software"), to deal
+  ~ in the Software without restriction, including without limitation the rights
+  ~ to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+  ~ copies of the Software, and to permit persons to whom the Software is
+  ~ furnished to do so, subject to the following conditions:
+  ~
+  ~ The above copyright notice and this permission notice shall be included in
+  ~ all copies or substantial portions of the Software.
+  ~
+  ~ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+  ~ IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+  ~ FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+  ~ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+  ~ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+  ~ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
+  ~ THE SOFTWARE.
+  -->
+
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lys.dao.mapper.MenuMapper">
+
+
+    <resultMap id="BaseResultMap" type="com.lys.dao.model.Menu">
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="name" property="name" jdbcType="VARCHAR" />
+        <result column="description" property="description" jdbcType="VARCHAR" />
+        <result column="url" property="url" jdbcType="VARCHAR" />
+        <result column="parent_id" property="parentId" jdbcType="INTEGER" />
+        <result column="ownership" property="ownership" jdbcType="VARCHAR" />
+        <result column="createDate" property="createDate" jdbcType="TIMESTAMP" />
+        <result column="lastUpdateDate" property="lastUpdateDate" jdbcType="TIMESTAMP" />
+        <result column="type" property="type" />
+        <result column="related" property="related" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, name, description, url, parent_id, ownership, createDate, lastUpdateDate, type, related
+    </sql>
+
+    <!-- 根据入参查询菜单 -->
+    <select id="query" parameterType="com.lys.dao.model.Menu" resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List"/>
+        from website_menu
+        where id = #{id}
+        and ownership = #{ownership}
+    </select>
+
+    <!-- 根据父菜单ID查询所有关联子菜单 -->
+    <select id="queryChildMenus" parameterType="com.lys.dao.model.Menu" resultMap="BaseResultMap">
+        select
+        id, name ,parent_id, ownership
+        from website_menu
+        where parent_id = #{id}
+        and ownership = #{ownership}
+        and type = 1
+        and related = 1
+    </select>
+    <!-- 根据父菜单ID查询所有关联子菜单 -->
+    <select id="queryChildMenuList" parameterType="com.lys.dao.model.Menu" resultMap="BaseResultMap">
+        select
+        id, name ,parent_id, ownership
+        from website_menu
+        where parent_id = #{id}
+        and ownership = #{ownership}
+        and type = 1
+    </select>
+    <!-- 查询一级菜单  经过筛选过滤-->
+    <select id="getParentMenu" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        id, name ,parent_id, ownership
+        from website_menu
+        where ownership = #{ownership}
+        and ISNULL(parent_id)
+        and type = 1
+        and related = 1
+    </select>
+    <!-- 首页 查询一级菜单-->
+    <select id="getParentMenuForHome" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        id, name ,parent_id, ownership
+        from website_menu
+        where ownership = #{ownership}
+        and ISNULL(parent_id)
+        and type = 1
+    </select>
+
+    <!-- 查询非导航菜单  -->
+    <select id="queryNonNavMenu" parameterType="java.lang.String" resultMap="BaseResultMap">
+        select
+        id, name ,parent_id, ownership
+        from website_menu
+        where ownership = #{ownership}
+        and type = 2
+        and related = 1
+    </select>
+
+</mapper>

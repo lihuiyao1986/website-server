@@ -1,0 +1,275 @@
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd" >
+<mapper namespace="com.lys.dao.mapper.MenuArticleMapper">
+
+    <resultMap id="BaseResultMap" type="com.lys.dao.model.MenuArticle">
+        <id column="id" property="id" jdbcType="INTEGER" />
+        <result column="menu_id" property="menuId" jdbcType="INTEGER" />
+        <result column="channelArticle_id" property="channelArticleId"
+                jdbcType="INTEGER" />
+        <result column="sort" property="sort" jdbcType="INTEGER" />
+        <result column="view_count" property="viewCount" jdbcType="INTEGER" />
+        <result column="ownership" property="ownership" jdbcType="VARCHAR" />
+    </resultMap>
+
+    <sql id="Base_Column_List">
+        id, menu_id, channelArticle_id, sort, view_count, ownership
+    </sql>
+    <!-- 根据菜单ID和文章ID查询菜单文章关联 -->
+    <select id="queryMenuArticle" parameterType="com.lys.dao.model.MenuArticle"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from website_menu_article
+        where menu_id = #{menuId}
+        and
+        channelArticle_id = #{channelArticleId}
+        and ownership = #{ownership}
+    </select>
+    <!-- 根据menuId查询菜单文章关联 -->
+    <select id="queryMenuArticles" parameterType="com.lys.dao.model.MenuArticle"
+            resultMap="BaseResultMap">
+        select
+        <include refid="Base_Column_List" />
+        from website_menu_article
+        where menu_id = #{menuId}
+        and ownership =
+        #{ownership}
+        ORDER BY sort asc
+    </select>
+
+    <!-- 分页查询文章 -->
+    <select id="query" parameterType="com.lys.dao.model.Menu"
+            resultType="com.lys.dao.model.ArticleDetail">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title,
+        log.content, log.url, log.createDate,
+        wma.view_count as viewCount,
+        wma.sort, wma.menu_id as menuId
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid
+        = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t,website_menu_article wma
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        and log.ownership like
+        CONCAT('%',#{ownership},'%')
+        and log.channelArticle_id =
+        wma.channelArticle_id
+        and wma.menu_id = #{id}
+        AND log.lastUpdateDate
+        = t.lastUpdateDate
+        ORDER BY wma.sort asc
+    </select>
+
+    <!-- 查询文章详情 -->
+    <select id="queryDetail" parameterType="com.lys.dao.model.ArticleDetail"
+            resultType="com.lys.dao.model.ArticleDetail">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title,
+        log.content, log.url, log.createDate,
+        wma.view_count as viewCount,
+        wma.menu_id as menuId
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid
+        = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t,website_menu_article wma
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        and log.lastUpdateDate =
+        t.lastUpdateDate
+        and log.ownership like CONCAT('%',#{ownership},'%')
+        and log.channelArticle_id = wma.channelArticle_id
+        and wma.menu_id = #{menuId}
+        and wma.channelArticle_id = #{channelArticleId}
+    </select>
+    <!-- 分页查询所有文章 -->
+    <select id="queryAllArticle" parameterType="com.lys.dao.model.Article"
+            resultType="com.lys.dao.model.Article">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        AND log.lastUpdateDate = t.lastUpdateDate
+        and log.ownership like CONCAT('%',#{ownership},'%')
+        ORDER BY log.createDate desc
+    </select>
+    <!-- 文章标题的模糊搜索 -->
+    <select id="search" parameterType="com.lys.dao.model.Article"
+            resultType="com.lys.dao.model.Article">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title,
+        log.url,
+        log.createDate,
+        wma.menu_id as menuId,
+        wma.view_count as viewCount
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid
+        = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t,website_menu_article wma
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        AND log.lastUpdateDate = t.lastUpdateDate
+        and log.ownership like CONCAT('%',#{ownership},'%')
+        and log.channelArticle_id = wma.channelArticle_id
+        and log.title like CONCAT('%',#{title},'%')
+        ORDER BY wma.menu_id asc
+    </select>
+
+    <!-- 查询燃气知识子菜单前两个文章 -->
+    <select id="queryGasKnowledge" parameterType="com.lys.dao.model.Menu"
+            resultType="com.lys.dao.model.Article">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title,
+        log.content, log.url, log.createDate,
+        wma.view_count as viewCount,
+        wma.sort, wma.menu_id as menuId
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid
+        = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t,website_menu_article wma
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        and log.ownership like
+        CONCAT('%',#{ownership},'%')
+        and log.channelArticle_id =
+        wma.channelArticle_id
+        and wma.menu_id = #{id}
+        AND log.lastUpdateDate
+        = t.lastUpdateDate
+        ORDER BY wma.sort asc LIMIT 2
+    </select>
+    <!-- 新增菜单文章关联 -->
+    <insert id="insert" parameterType="com.lys.dao.model.MenuArticle">
+        insert into
+        website_menu_article(menu_id, channelArticle_id, sort, ownership)
+        values (
+        #{menuId},
+        #{channelArticleId},
+        #{sort},
+        #{ownership}
+        )
+    </insert>
+    <!-- 修改浏览量 -->
+    <update id="updateMenuArticle" parameterType="com.lys.dao.model.MenuArticle">
+        update
+        website_menu_article
+        set view_count = #{viewCount}
+        where
+        channelArticle_id = #{channelArticleId}
+        and menu_id = #{menuId}
+        and
+        ownership = #{ownership}
+    </update>
+    <!-- 删除菜单文章关联 -->
+    <delete id="delete" parameterType="com.lys.dao.model.MenuArticle">
+        delete from
+        website_menu_article
+        where channelArticle_id = #{channelArticleId}
+        and
+        menu_id = #{menuId}
+        and ownership = #{ownership}
+    </delete>
+    <!-- 分页查询所有文章 -->
+    <select id="match" parameterType="com.lys.dao.model.Article"
+            resultType="com.lys.dao.model.Article">
+        SELECT
+        log.channelArticle_id as channelArticleId,
+        log.title
+        FROM
+        biz_channelarticlelog log ,
+        (
+        SELECT
+        MAX(log.lastUpdateDate) AS lastUpdateDate ,
+        log.channelArticle_id
+        FROM
+        biz_channelarticlelog log ,
+        biz_channelarticle a
+        WHERE
+        log.channelArticle_id = a.id
+        AND log.operateType = 'publish'
+        AND a.valid = TRUE
+        GROUP BY
+        log.channelArticle_id
+        ) t
+        WHERE
+        log.channelArticle_id = t.channelArticle_id
+        AND log.lastUpdateDate = t.lastUpdateDate
+        and log.ownership like CONCAT('%',#{ownership},'%')
+        and log.title like CONCAT('%',#{title},'%')
+        ORDER BY log.lastUpdateDate desc
+    </select>
+
+</mapper>
